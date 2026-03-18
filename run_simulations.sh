@@ -67,7 +67,7 @@ echo "Creating configuration backup at: ${BACKUP_FILE}"
 cp "${CONFIG_FILE}" "${BACKUP_FILE}"
 
 # Parameter combinations
-MODELS=("openai/gpt-5" "openai/gpt-5-mini")
+MODELS=("anthropic/claude-sonnet-4.5")
 INPUTS=("input_const.json" "input_varia.json")
 TEMPERATURES=(0.1 0.5)
 GRAPH_VERSIONS=("v1" "v2")

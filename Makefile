@@ -19,12 +19,12 @@ setup-kubernetes-infra:
 	)
 	@echo -e "\\e[35mKubernetes infrastructure setup completed.\\e[0m"
 
-# Starts all required containers via docker-compose
+# Starts all required containers via docker compose
 run-all-containers:
 	@echo "Updating compose.yaml paths with the user's HOME..."
 	@echo scripts/replace_paths_in_compose.sh
-	@echo "Starting all necessary containers via docker-compose..."
-	@docker-compose -f compose.yaml up --build -d
+	@echo "Starting all necessary containers via docker compose..."
+	@docker compose -f compose.yaml up --build -d
 	@echo "All containers started successfully."
 
 # Run containers in human-in-the-loop mode (UI review required)
@@ -46,6 +46,26 @@ start:
 
 # Sets up the complete infrastructure and runs the simulator
 setup-and-start: setup start
+
+# Runs ADRS refinement on the latest simulation output
+adrs-refine:
+	@echo -e "\\\e[35mRunning ADRS evaluate-and-refine on latest simulation...\\\e[0m"
+	@LAST_AN_DIR=$$(ls -1dt analyzer/output/*/ 2>/dev/null | head -1); \
+	if [ -z "$$LAST_AN_DIR" ]; then \
+		echo "Error: no analyzer output found in analyzer/output/"; \
+		exit 1; \
+	fi; \
+	echo "Using analyzer output: $$LAST_AN_DIR"; \
+	adrs evaluate-and-refine \
+		--analyzer-output "$$LAST_AN_DIR" \
+		--simulator-path . \
+		--objective adrs_objective.json \
+		--prompt-file consolidator_agent.txt
+	@echo -e "\\\e[35mADRS refinement completed.\\\e[0m"
+
+# Sets up infrastructure, runs the simulator, and then refines the prompt
+setup-and-start-with-refinement: setup-and-start adrs-refine
+
 
 # Cleans all documents from all collections in the mongo container
 clean-mongo-db:
@@ -71,7 +91,7 @@ stop-kubernetes-infra:
 # Stops and removes all simulator containers, volumes, and images
 stop-all-containers:
 	@echo "Stopping and removing all containers and volumes defined in compose.yaml..."
-	@sudo docker-compose -f compose.yaml down -v
+	@sudo docker compose -f compose.yaml down -v
 	@echo "Removing images..."
 	@mongo_image_ids=$$(sudo docker images --format '{{.ID}} {{.Repository}}' | grep mongo | awk '{print $$1}'); \
 	for img in $$(sudo docker images -q); do \
@@ -108,9 +128,9 @@ help:
 	@echo "  start                    : Starts ONLY the Go simulator (assumes infrastructure and containers are already running)."
 	@echo "  ---"
 	@echo "  Container Management:"
-	@echo "    run-all-containers     : Starts all required containers via docker-compose."
+	@echo "    run-all-containers     : Starts all required containers via docker compose."
 	@echo "    restart-all-containers : Stops, removes, and recreates all containers, volumes, and images."
-	@echo "    stop-all-containers    : Stops and removes all simulator containers, volumes and images via docker-compose."
+	@echo "    stop-all-containers    : Stops and removes all simulator containers, volumes and images via docker compose."
 	@echo "  ---"
 	@echo "  Database:"
 	@echo "    clean-mongo-db         : Stops the mongo container and removes its data volume."

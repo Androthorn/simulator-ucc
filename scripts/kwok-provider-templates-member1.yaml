@@ -8,8 +8,8 @@ data:
     - name: member1-template
       status: "Ready"
       resources:
-        cpu: "16"
-        memory: "32Gi"
+        cpu: "8"
+        memory: "16Gi"
       labels:
         cloud: private
         kwok.x-k8s.io/node: fake

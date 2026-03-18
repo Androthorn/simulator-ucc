@@ -1,32 +1,29 @@
 # clusters initialzation
 clusters:
   member1:
-    nodes: 38
+    nodes: 10
     cpu: "8"
     memory: "16Gi"
     autoscaler: false
-
   member2:
-    nodes: 38
+    nodes: 10
     cpu: "8"
     memory: "16Gi"
     autoscaler: true
-
 # environment config
 prometheus:
   grafana_enable: false
-
 # engine config
 ai-engine:
   enabled: true
   data:
-    input_json: monitor_outputs.json
+    input_json: input_const.json
   ai:
-    mode: multi_agent                 # Agent mode: 'single_agent' or 'multi_agent'
-    selected_model: x-ai/grok-4-fast  # Selected model to be used
-    scheduler_interval: 300           # Number of seconds between scheduler runs
-    timestamp_lookback_seconds: 600   # Number of seconds to look back for metrics
-    fetch_metrics_immediately: false   # Whether to fetch metrics immediately or wait for the scheduler
+    mode: multi_agent # Agent mode: 'single_agent' or 'multi_agent'
+    selected_model: google/gemini-2.5-flash # Selected model to be used
+    scheduler_interval: 300 # Number of seconds between scheduler runs
+    timestamp_lookback_seconds: 600 # Number of seconds to look back for metrics
+    fetch_metrics_immediately: false # Whether to fetch metrics immediately or wait for the scheduler
     # Single Agent Configuration
     single_agent:
       selected_prompt: single_agent_v1
@@ -36,9 +33,9 @@ ai-engine:
         max_output_tokens: 18000
     # Multi-Agent Configuration
     multi_agent:
-      selected_prompt: multi_agent
+      selected_prompt: multi_agent_v3
       provider: openrouter
-      graph_version: v2  # Options: 'v1' (tool_system) or 'v2' (performance+cost+consolidator)
+      graph_version: v2 # Options: 'v1' (tool_system) or 'v2' (performance+cost+consolidator)
       generation_config:
         temperature: 0.1
         max_output_tokens: 18000
@@ -56,7 +53,7 @@ ai-engine:
       prompts:
         performance_prompt_file: performance_agent
         cost_prompt_file: cost_agent
-        consolidator_prompt_file: consolidator_agent
+        consolidator_prompt_file: consolidator_agent_v6
     # Legacy default_config for backward compatibility
     default_config:
       provider: openrouter
@@ -109,18 +106,16 @@ ai-engine:
     port: 8083
     reload: false
   recommendation_history:
-    enabled: false                    # Toggle feature on/off
-    lookback_count: 3                 # Number of past history batches to consider
+    enabled: false # Toggle feature on/off
+    lookback_count: 3 # Number of past history batches to consider
     mongodb:
-      host: "localhost"               # MongoDB host address
-      port: 27017                     # MongoDB port
-      database: "ai_engine"           # MongoDB database name
-      collection: "recommendation_history"  # MongoDB collection name
-
+      host: "localhost" # MongoDB host address
+      port: 27017 # MongoDB port
+      database: "ai_engine" # MongoDB database name
+      collection: "recommendation_history" # MongoDB collection name
 # monitor config
 monitor:
   collection_interval: 30
-
 # actuator config
 actuator:
   orchestrator: karmada # karmada or morpheus
@@ -128,7 +123,7 @@ actuator:
     port: 8084
   file:
     recommendations: recommendations_example.csv
-  mode: auto  # Options: "auto" or "human-in-the-loop"
+  mode: auto # Options: "auto" or "human-in-the-loop"
   morpheus:
     url: "https://CHANGE_ME_WITH_YOUR_MORPHEUS_URL"
     access_token: "CHANGE_ME_WITH_YOUR_MORPHEUS_ACCESS_TOKEN"

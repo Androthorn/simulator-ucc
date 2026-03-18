@@ -1,0 +1,36 @@
+{
+    "goal": "Optimize pod placement by prioritizing the immediate resolution of pending pods (performance) above all else, while maintaining stability (minimize migrations). Accept that CPU/memory overloads may be unavoidable. Cost is a secondary concern; do NOT sacrifice performance for cost savings.",
+    "success_criteria": [
+        {
+            "metric": "pending_pods",
+            "operator": "<",
+            "threshold": 5.0
+        },
+        {
+            "metric": "time_with_pending",
+            "operator": "<",
+            "threshold": 0.2
+        },
+        {
+            "metric": "cost",
+            "operator": "<",
+            "threshold": 0.04
+        },
+        {
+            "metric": "number_of_migrations",
+            "operator": "<",
+            "threshold": 50.0
+        }
+    ],
+    "priority_metrics": [
+        "pending_pods",
+        "time_with_pending",
+        "cost",
+        "number_of_migrations"
+    ],
+    "focus_areas": [
+        "simplicity_and_stability",
+        "graceful_degradation_under_load",
+        "minimizing_pending_pods_at_all_costs"
+    ]
+}

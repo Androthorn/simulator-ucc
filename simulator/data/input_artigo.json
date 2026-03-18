@@ -1,0 +1,24 @@
+{
+  "config": {
+    "orchestrator": "karmada",
+    "namespace": "default",
+    "kubeconfig": "karmada.config"
+  },
+  "data": [
+    { "id": "frontend",           "kind": "deployment", "action": "create", "replicas": "2", "cpu": "1", "memory": "2", "job_duration": "", "label": "private", "timestamp": 1 },
+    { "id": "api-gateway",        "kind": "deployment", "action": "create", "replicas": "2", "cpu": "1", "memory": "2", "job_duration": "", "label": "private", "timestamp": 1 },
+    { "id": "user-service",       "kind": "deployment", "action": "create", "replicas": "2", "cpu": "1", "memory": "2", "job_duration": "", "label": "private", "timestamp": 1 },
+    { "id": "orders-service",     "kind": "deployment", "action": "create", "replicas": "2", "cpu": "1", "memory": "2", "job_duration": "", "label": "private", "timestamp": 1 },
+    { "id": "payments-service",   "kind": "deployment", "action": "create", "replicas": "1", "cpu": "1", "memory": "2", "job_duration": "", "label": "private", "timestamp": 1 },
+    { "id": "redis-cache",        "kind": "deployment", "action": "create", "replicas": "1", "cpu": "1", "memory": "2", "job_duration": "", "label": "private", "timestamp": 1 },
+
+    { "id": "notifications",      "kind": "deployment", "action": "create", "replicas": "2", "cpu": "1", "memory": "2", "job_duration": "", "label": "private", "timestamp": 70 },
+    { "id": "search-service",     "kind": "deployment", "action": "create", "replicas": "2", "cpu": "1", "memory": "2", "job_duration": "", "label": "private", "timestamp": 70 },
+    { "id": "metrics-exporter",   "kind": "deployment", "action": "create", "replicas": "1", "cpu": "1", "memory": "2", "job_duration": "", "label": "private", "timestamp": 70 },
+
+    { "id": "batch-worker",       "kind": "deployment", "action": "create", "replicas": "3", "cpu": "1", "memory": "2", "job_duration": "", "label": "private", "timestamp": 130 },
+    { "id": "report-generator",   "kind": "deployment", "action": "create", "replicas": "2", "cpu": "1", "memory": "2", "job_duration": "", "label": "private", "timestamp": 130 },
+
+    { "action": "create", "cpu": "1", "id": "finalizer", "job_duration": "", "kind": "deployment", "label": "private", "memory": "2", "replicas": "0", "timestamp": 200 }
+  ]
+}
