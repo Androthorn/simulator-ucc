@@ -29,7 +29,8 @@ trap restore_config EXIT
 
 # aponta o prompt candidato via config (nunca edita txt ativo) — mesma linha do run_one_real
 apply_prompt() {
-  yq -i '.["ai-engine"].ai.multi_agent.prompts.consolidator_prompt_file = "'"${PROMPT_NAME}"'"' "${CONFIG_PATH}"
+  yq -i '.["ai-engine"].ai.multi_agent.prompts.consolidator_prompt_file = "'"${PROMPT_NAME}"'"' "${CONFIG_PATH}" \
+    || die "apply_prompt (yq) falhou — config não repontado"
 }
 
 write_provenance() { # $1=status
