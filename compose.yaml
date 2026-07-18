@@ -26,7 +26,7 @@ services:
             - SIMULATOR_CONFIG=/app/simulator_config.yaml
         volumes:
             - type: bind
-              source: ./simulator/data/config.yaml
+              source: ${SIM_CONFIG_SRC:-./simulator/data/config.yaml}
               target: /app/simulator_config.yaml
         network_mode: host
     ai-engine:
@@ -42,7 +42,7 @@ services:
             - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
         volumes:
             - type: bind
-              source: ./simulator/data/config.yaml
+              source: ${SIM_CONFIG_SRC:-./simulator/data/config.yaml}
               target: /app/simulator_config.yaml
         network_mode: "host"
         depends_on:
@@ -64,7 +64,7 @@ services:
               source: ~/.kwok
               target: /root/.kwok
             - type: bind
-              source: ./simulator/data/config.yaml
+              source: ${SIM_CONFIG_SRC:-./simulator/data/config.yaml}
               target: /simulator/data/config.yaml
         network_mode: "host"
         depends_on:

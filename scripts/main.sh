@@ -38,7 +38,8 @@ echo -e "${COLOR}[1/8] 📦 Installing prerequisites...${RESET}"
 # -----------------------------------------------------------------------------
 # 2. Load all variables 
 # -----------------------------------------------------------------------------
-CONFIG_FILE="../simulator/data/config.yaml"
+# SIM_CONFIG_SRC (path da config a usar) parametriza a infra; default = config.yaml congelada.
+CONFIG_FILE="${SIM_CONFIG_SRC:-../simulator/data/config.yaml}"
 [[ ! -f $CONFIG_FILE ]] && { echo "❌ $CONFIG_FILE not found."; exit 1; }
 
 echo -e "${COLOR}[2/8] 📦 Load configuration...${RESET}"

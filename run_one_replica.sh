@@ -64,7 +64,10 @@ fi
 # --- execução real (RESET_MODE=full): reusa a mecânica do run_one_real ---
 cp "${DATA_DIR}/${INPUT_FILE}" "${DATA_DIR}/input.json"
 before="$(ls -1dt "${DATA_DIR}/output"/*/ 2>/dev/null | head -1 || true)"
-sudo -E CONFIG_OVERRIDE="${WORK_CFG}" make -C "${ROOT_DIR}" setup-and-start || die "setup-and-start falhou"
+# SIM_CONFIG_SRC (path ABSOLUTO da cópia de trabalho) é honrado por compose.yaml e main.sh
+# (Route A: infra parametrizada; default = config.yaml congelada quando a var não é setada).
+WORK_CFG_ABS="$(readlink -f "${WORK_CFG}")"
+sudo -E SIM_CONFIG_SRC="${WORK_CFG_ABS}" make -C "${ROOT_DIR}" setup-and-start || die "setup-and-start falhou"
 last="$(ls -1dt "${ROOT_DIR}/simulator/data/output"/*/ 2>/dev/null | head -1 || true)"
 [ -n "${last}" ] && [ "${last}" != "${before}" ] && [ -f "${last%/}/metrics.json" ] || die "sim sem output novo"
 ts="$(basename "${last%/}")"
