@@ -1,6 +1,6 @@
 # config_compressed.yaml — cenário comprimido do workshop (passo 0: scheduler 90s,
 # collection 5s, lookback 180s). Valores propostos; sujeitos ao gate 1. NÃO é a config
-# congelada do TCC (essa é config.yaml). Duração via input_compressed.json (finalizer@600s = 10min).
+# congelada do TCC (essa é config.yaml). Duração via input_compressed.json (finalizer@700s ≈ 11.6min, ~5 ciclos — confirmado no smoke).
 # clusters initialzation
 clusters:
   member1:

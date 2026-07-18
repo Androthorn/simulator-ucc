@@ -62,19 +62,29 @@ if [ "${DRY}" -eq 1 ]; then
 fi
 
 # --- execução real (RESET_MODE=full): reusa a mecânica do run_one_real ---
+# Keepalive de sudo: prima uma vez e renova o cache a cada 50s. Sem isso, os ~10min
+# de sim sem nenhum sudo deixam o cache expirar e o cp do fim re-pede a senha.
+sudo -v || die "sem credenciais sudo."
+( while true; do sudo -n true >/dev/null 2>&1 || exit 0; sleep 50; done ) &
+SUDO_KEEPALIVE_PID=$!
+trap 'kill "${SUDO_KEEPALIVE_PID}" 2>/dev/null || true' EXIT
+
 cp "${DATA_DIR}/${INPUT_FILE}" "${DATA_DIR}/input.json"
 before="$(ls -1dt "${DATA_DIR}/output"/*/ 2>/dev/null | head -1 || true)"
 # SIM_CONFIG_SRC (path ABSOLUTO da cópia de trabalho) é honrado por compose.yaml e main.sh
 # (Route A: infra parametrizada; default = config.yaml congelada quando a var não é setada).
 WORK_CFG_ABS="$(readlink -f "${WORK_CFG}")"
 sudo -E SIM_CONFIG_SRC="${WORK_CFG_ABS}" make -C "${ROOT_DIR}" setup-and-start || die "setup-and-start falhou"
-last="$(ls -1dt "${ROOT_DIR}/simulator/data/output"/*/ 2>/dev/null | head -1 || true)"
+last="$(ls -1dt "${DATA_DIR}/output"/*/ 2>/dev/null | head -1 || true)"
 [ -n "${last}" ] && [ "${last}" != "${before}" ] && [ -f "${last%/}/metrics.json" ] || die "sim sem output novo"
 ts="$(basename "${last%/}")"
 (cd "${ROOT_DIR}/analyzer" && make generate-plots "${ts}") || die "analyzer falhou"
 mkdir -p "${DEST}/sim" "${DEST}/analyzer"
-sudo cp -r "${last%/}/." "${DEST}/sim/" 2>/dev/null || true
-sudo cp -r "${ROOT_DIR}/analyzer/output/${ts}/." "${DEST}/analyzer/" 2>/dev/null || true
+# copy-back robusto: NÃO engole erro e verifica que os logs crus foram salvos (o
+# ai-engine.log é a fonte da contagem de ciclos — perder é inaceitável p/ o rigor).
+sudo cp -r "${last%/}/." "${DEST}/sim/" || die "cp do sim cru falhou — output preservado em ${last%/}"
+[ -f "${DEST}/sim/metrics.json" ] || die "sim/ salvo sem metrics.json — output cru preservado em ${last%/}"
+sudo cp -r "${ROOT_DIR}/analyzer/output/${ts}/." "${DEST}/analyzer/" || die "cp do analyzer falhou"
 sudo chown -R "${SUDO_USER:-$USER}:${SUDO_USER:-$USER}" "${DEST}" 2>/dev/null || true
 write_provenance "complete"
-log "réplica completa → ${DEST}"
+log "réplica completa → ${DEST} (${INPUT_FILE}, config comprimido)"
