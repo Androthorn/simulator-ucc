@@ -13,7 +13,7 @@ RESET_MODE="${RESET_MODE:-full}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROMPTS_DIR="${ROOT_DIR}/ai-engine/prompts"
-CANONICAL="${CONFIG_PATH}.replica_canonical"
+DATA_DIR="${ROOT_DIR}/simulator/data"
 
 log() { echo "[$(date -u +%H:%M:%S)] $*"; }
 die() { echo "❌ FATAL: $*" >&2; exit 1; }
@@ -22,35 +22,38 @@ sha_of() { sha256sum "$1" | awk '{print $1}'; }
 [ "${RESET_MODE}" = "light" ] && die "RESET_MODE=light ainda NÃO validado (gate 1). Use full."
 [ "${RESET_MODE}" = "full" ] || die "RESET_MODE inválido: ${RESET_MODE}"
 
-# snapshot canônico do config comprimido (uma vez) p/ restauração
-[ -f "${CANONICAL}" ] || cp "${CONFIG_PATH}" "${CANONICAL}"
-restore_config() { cp "${CANONICAL}" "${CONFIG_PATH}"; }
-trap restore_config EXIT
+# Cópia de trabalho por-réplica: o config base (config_compressed.yaml) NUNCA é mutado
+# in-place — assim edições no base (ex.: input_json) não são revertidas, e cada réplica
+# guarda o config exato que usou em ${DEST}/config.used.yaml (bom p/ provenance/rigor).
+mkdir -p "${DEST}"
+WORK_CFG="${DEST}/config.used.yaml"
+cp "${CONFIG_PATH}" "${WORK_CFG}" || die "não consegui copiar config base p/ ${WORK_CFG}"
 
-# aponta o prompt candidato via config (nunca edita txt ativo) — mesma linha do run_one_real
-apply_prompt() {
-  yq -i '.["ai-engine"].ai.multi_agent.prompts.consolidator_prompt_file = "'"${PROMPT_NAME}"'"' "${CONFIG_PATH}" \
-    || die "apply_prompt (yq) falhou — config não repontado"
-}
+# aponta o prompt candidato NA CÓPIA (via config, nunca editando o txt ativo)
+yq -i '.["ai-engine"].ai.multi_agent.prompts.consolidator_prompt_file = "'"${PROMPT_NAME}"'"' "${WORK_CFG}" \
+  || die "apply_prompt (yq) falhou — config não repontado"
 
 write_provenance() { # $1=status
   local pf="${PROMPTS_DIR}/${PROMPT_NAME}.txt"
   local psha; psha="$(sha_of "${pf}")"
-  local csha; csha="$(sha_of "${CONFIG_PATH}")"
-  local isha; isha="$(sha_of "${ROOT_DIR}/simulator/data/input_const.json" 2>/dev/null || echo NA)"
-  local model; model="$(yq -r '.["ai-engine"].ai.selected_model // "unknown"' "${CONFIG_PATH}")"
+  local csha; csha="$(sha_of "${WORK_CFG}")"
+  local ifile="${INPUT_FILE:-input_const.json}"
+  local isha; isha="$(sha_of "${DATA_DIR}/${ifile}" 2>/dev/null || echo NA)"
+  local model; model="$(yq -r '.["ai-engine"].ai.selected_model // "unknown"' "${WORK_CFG}")"
   mkdir -p "${DEST}"
   jq -n --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg st "$1" \
         --arg pn "${PROMPT_NAME}.txt" --arg ps "${psha}" --arg cs "${csha}" \
-        --arg is "${isha}" --arg md "${model}" --arg rm "${RESET_MODE}" \
+        --arg if "${ifile}" --arg is "${isha}" --arg md "${model}" --arg rm "${RESET_MODE}" \
     '{timestamp:$ts,status:$st,reset_mode:$rm,model:$md,
-      prompt:{file:$pn,sha256:$ps},config:{sha256:$cs},input:{sha256:$is},
+      prompt:{file:$pn,sha256:$ps},config:{sha256:$cs},input:{file:$if,sha256:$is},
       script:"run_one_replica.sh"}' > "${DEST}/provenance.json"
 }
 
-restore_config
-apply_prompt
 [ -f "${PROMPTS_DIR}/${PROMPT_NAME}.txt" ] || die "prompt não existe: ${PROMPT_NAME}.txt (loader devolveria vazio)"
+
+# input vem do config (data.input_json), não hardcodado — permite o input comprimido do workshop.
+INPUT_FILE="$(yq -r '.["ai-engine"].data.input_json // "input_const.json"' "${WORK_CFG}")"
+[ -f "${DATA_DIR}/${INPUT_FILE}" ] || die "input não existe: ${INPUT_FILE}"
 
 if [ "${DRY}" -eq 1 ]; then
   write_provenance "planned"
@@ -59,9 +62,9 @@ if [ "${DRY}" -eq 1 ]; then
 fi
 
 # --- execução real (RESET_MODE=full): reusa a mecânica do run_one_real ---
-cp "${ROOT_DIR}/simulator/data/input_const.json" "${ROOT_DIR}/simulator/data/input.json"
-before="$(ls -1dt "${ROOT_DIR}/simulator/data/output"/*/ 2>/dev/null | head -1 || true)"
-sudo -E CONFIG_OVERRIDE="${CONFIG_PATH}" make -C "${ROOT_DIR}" setup-and-start || die "setup-and-start falhou"
+cp "${DATA_DIR}/${INPUT_FILE}" "${DATA_DIR}/input.json"
+before="$(ls -1dt "${DATA_DIR}/output"/*/ 2>/dev/null | head -1 || true)"
+sudo -E CONFIG_OVERRIDE="${WORK_CFG}" make -C "${ROOT_DIR}" setup-and-start || die "setup-and-start falhou"
 last="$(ls -1dt "${ROOT_DIR}/simulator/data/output"/*/ 2>/dev/null | head -1 || true)"
 [ -n "${last}" ] && [ "${last}" != "${before}" ] && [ -f "${last%/}/metrics.json" ] || die "sim sem output novo"
 ts="$(basename "${last%/}")"

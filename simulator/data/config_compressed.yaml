@@ -1,6 +1,6 @@
 # config_compressed.yaml — cenário comprimido do workshop (passo 0: scheduler 90s,
 # collection 5s, lookback 180s). Valores propostos; sujeitos ao gate 1. NÃO é a config
-# congelada do TCC (essa é config.yaml). Sentinela do input ainda a ajustar no gate 1.
+# congelada do TCC (essa é config.yaml). Duração via input_compressed.json (finalizer@600s = 10min).
 # clusters initialzation
 clusters:
   member1:
@@ -20,7 +20,7 @@ prometheus:
 ai-engine:
   enabled: true
   data:
-    input_json: input_const.json
+    input_json: input_compressed.json
   ai:
     mode: multi_agent # Agent mode: 'single_agent' or 'multi_agent'
     selected_model: google/gemini-2.5-flash # Selected model to be used
