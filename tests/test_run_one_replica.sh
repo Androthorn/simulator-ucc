@@ -15,9 +15,16 @@ else
   echo "FAIL: --dry retornou erro"; fail=1
 fi
 
-# 2) RESET_MODE=light aborta com 'não validado'
-out="$(RESET_MODE=light bash "${SCRIPT}" --dry "workshop/cand_test" "${HERE}/../simulator/data/config_compressed.yaml" "${tmp}" 2>&1)"
-echo "${out}" | grep -qi "não validado" || { echo "FAIL: light não abortou"; fail=1; }
+# 2) RESET_MODE=light --dry é válido e grava provenance com reset_mode: light
+if RESET_MODE=light bash "${SCRIPT}" --dry "workshop/cand_test" "${HERE}/../simulator/data/config_compressed.yaml" "${tmp}" >/dev/null 2>&1; then
+  grep -q '"reset_mode": *"light"' "${tmp}/provenance.json" || { echo "FAIL: provenance light ausente/errado"; fail=1; }
+else
+  echo "FAIL: light --dry retornou erro"; fail=1
+fi
+
+# 3) RESET_MODE inválido morre alto
+RESET_MODE=bogus bash "${SCRIPT}" --dry "workshop/cand_test" "${HERE}/../simulator/data/config_compressed.yaml" "${tmp}" >/dev/null 2>&1 \
+  && { echo "FAIL: RESET_MODE inválido não abortou"; fail=1; }
 
 rm -rf "${tmp}" "${HERE}/../ai-engine/prompts/workshop/cand_test.txt"
 [ "${fail}" -eq 0 ] && echo "OK" || exit 1

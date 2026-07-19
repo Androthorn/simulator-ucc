@@ -19,8 +19,7 @@ log() { echo "[$(date -u +%H:%M:%S)] $*"; }
 die() { echo "❌ FATAL: $*" >&2; exit 1; }
 sha_of() { sha256sum "$1" | awk '{print $1}'; }
 
-[ "${RESET_MODE}" = "light" ] && die "RESET_MODE=light ainda NÃO validado (gate 1). Use full."
-[ "${RESET_MODE}" = "full" ] || die "RESET_MODE inválido: ${RESET_MODE}"
+[ "${RESET_MODE}" = "full" ] || [ "${RESET_MODE}" = "light" ] || die "RESET_MODE inválido: ${RESET_MODE}"
 
 # Cópia de trabalho por-réplica: o config base (config_compressed.yaml) NUNCA é mutado
 # in-place — assim edições no base (ex.: input_json) não são revertidas, e cada réplica
@@ -61,7 +60,6 @@ if [ "${DRY}" -eq 1 ]; then
   exit 0
 fi
 
-# --- execução real (RESET_MODE=full): reusa a mecânica do run_one_real ---
 # Keepalive de sudo: prima uma vez e renova o cache a cada 50s. Sem isso, os ~10min
 # de sim sem nenhum sudo deixam o cache expirar e o cp do fim re-pede a senha.
 sudo -v || die "sem credenciais sudo."
@@ -69,12 +67,27 @@ sudo -v || die "sem credenciais sudo."
 SUDO_KEEPALIVE_PID=$!
 trap 'kill "${SUDO_KEEPALIVE_PID}" 2>/dev/null || true' EXIT
 
+# --- execução real: full (rebuild) ou light (reusa cluster) ---
 cp "${DATA_DIR}/${INPUT_FILE}" "${DATA_DIR}/input.json"
 before="$(ls -1dt "${DATA_DIR}/output"/*/ 2>/dev/null | head -1 || true)"
-# SIM_CONFIG_SRC (path ABSOLUTO da cópia de trabalho) é honrado por compose.yaml e main.sh
-# (Route A: infra parametrizada; default = config.yaml congelada quando a var não é setada).
 WORK_CFG_ABS="$(readlink -f "${WORK_CFG}")"
-sudo -E SIM_CONFIG_SRC="${WORK_CFG_ABS}" make -C "${ROOT_DIR}" setup-and-start || die "setup-and-start falhou"
+
+if [ "${RESET_MODE}" = "full" ]; then
+  # SIM_CONFIG_SRC (path ABSOLUTO) é honrado por compose.yaml e main.sh (Route A).
+  sudo -E SIM_CONFIG_SRC="${WORK_CFG_ABS}" make -C "${ROOT_DIR}" setup-and-start || die "setup-and-start falhou"
+else
+  # light: exige cluster de pé; reseta o estado mutável; prova limpeza; roda só o sim.
+  sudo docker ps --format '{{.Names}}' | grep -qx member1-control-plane \
+    && sudo docker ps --format '{{.Names}}' | grep -qx member2-control-plane \
+    && sudo docker ps --format '{{.Names}}' | grep -qx karmada-host-control-plane \
+    || die "nenhum cluster de pé; rode uma réplica full primeiro (RESET_MODE=full)"
+  KUBECONFIG="${HOME}/.kube/members.config" kubectl --context member1 get nodes >/dev/null 2>&1 \
+    || die "kubeconfig inválido/cluster inacessível; rode full primeiro"
+  bash "${ROOT_DIR}/scripts/light_reset.sh" "${WORK_CFG_ABS}" || die "light_reset falhou"
+  bash "${ROOT_DIR}/scripts/assert_clean_state.sh" "${WORK_CFG_ABS}" \
+    || die "state-assertion reprovou — possível vazamento (output preservado, nada rodado)"
+  sudo -E SIM_CONFIG_SRC="${WORK_CFG_ABS}" make -C "${ROOT_DIR}" start || die "make start (light) falhou"
+fi
 last="$(ls -1dt "${DATA_DIR}/output"/*/ 2>/dev/null | head -1 || true)"
 [ -n "${last}" ] && [ "${last}" != "${before}" ] && [ -f "${last%/}/metrics.json" ] || die "sim sem output novo"
 ts="$(basename "${last%/}")"
