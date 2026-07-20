@@ -27,6 +27,10 @@ if [ "${PRINT_ONLY}" -eq 1 ]; then
   echo "member1=${MEMBER1_NODES} member2=${MEMBER2_NODES}"; exit 0
 fi
 
+# Daqui pra baixo tudo toca o cluster. O kubeconfig real vive em /root/.kube (o setup roda
+# como root e `sudo -E` é ignorado nesta máquina) → este trecho EXIGE root.
+[ "$(id -u)" -eq 0 ] || die "precisa rodar como root (sudo) — o kubeconfig do cluster está em /root/.kube"
+
 export KUBECONFIG="${MEMBERS_KUBECONFIG}"
 
 # 1) nós KWOK == baseline do config (pega nós que o autoscaler somou)
@@ -66,16 +70,16 @@ for url in "${PROM_ENDPOINTS[@]}"; do
 done
 
 # 4) recommendation_history == 0 docs
-mid="$(sudo docker ps -q -f name=mongo)"
+mid="$(docker ps -q -f name=mongo)"
 [ -n "${mid}" ] || die "container mongo não está de pé"
-cnt="$(sudo docker exec "${mid}" mongosh --quiet "${MONGO_DB}" --eval "db.${MONGO_COLL}.countDocuments({})" 2>/dev/null)" \
+cnt="$(docker exec "${mid}" mongosh --quiet "${MONGO_DB}" --eval "db.${MONGO_COLL}.countDocuments({})" 2>/dev/null)" \
   || die "mongosh countDocuments falhou"
 cnt="$(printf '%s' "$cnt" | tr -d '[:space:]')"
 [ "${cnt}" = "0" ] || die "recommendation_history tem '${cnt}' doc(s) (esperado 0)"
 
 # 5) app containers todos running
 for c in "${APP_CONTAINERS[@]}"; do
-  status="$(sudo docker inspect -f '{{.State.Status}}' "${c}" 2>/dev/null || echo missing)"
+  status="$(docker inspect -f '{{.State.Status}}' "${c}" 2>/dev/null || echo missing)"
   [ "${status}" = "running" ] || die "container ${c} não está running (status=${status})"
 done
 

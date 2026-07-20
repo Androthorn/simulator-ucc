@@ -9,6 +9,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPTS_DIR="${ROOT_DIR}/scripts"
 CONFIG_PATH="${1:?config_path}"
 [ -f "${CONFIG_PATH}" ] || { echo "❌ RESET: config não existe: ${CONFIG_PATH}" >&2; exit 1; }
+[ "$(id -u)" -eq 0 ] || { echo "❌ RESET: precisa rodar como root (sudo) — o kubeconfig do cluster está em /root/.kube" >&2; exit 1; }
 
 MEMBERS_KUBECONFIG="${MEMBERS_KUBECONFIG:-$HOME/.kube/members.config}"
 PROM_ENDPOINTS=("${PROM_MEMBER1:-http://localhost:9090}" "${PROM_MEMBER2:-http://localhost:9091}")
@@ -48,14 +49,15 @@ for url in "${PROM_ENDPOINTS[@]}"; do
 done
 
 # 4) Mongo: dropa a coleção de histórico (container fica de pé)
-mid="$(sudo docker ps -q -f name=mongo)"
+mid="$(docker ps -q -f name=mongo)"
 [ -n "${mid}" ] || { echo "❌ RESET: container mongo não está de pé" >&2; exit 1; }
 log "drop ${MONGO_DB}.${MONGO_COLL}"
-sudo docker exec "${mid}" mongosh --quiet "${MONGO_DB}" --eval "db.${MONGO_COLL}.drop()" >/dev/null
+docker exec "${mid}" mongosh --quiet "${MONGO_DB}" --eval "db.${MONGO_COLL}.drop()" >/dev/null
 
 # 5) App: recria os 4 containers com o SIM_CONFIG_SRC da réplica (mongo NÃO é recriado)
 log "force-recreate app containers com SIM_CONFIG_SRC=${CONFIG_PATH}"
-SIM_CONFIG_SRC="${CONFIG_PATH}" sudo -E docker compose -f "${ROOT_DIR}/compose.yaml" \
+export SIM_CONFIG_SRC="${CONFIG_PATH}"
+docker compose -f "${ROOT_DIR}/compose.yaml" \
   up -d --force-recreate --no-deps ai-engine actuator broker monitor
 
 log "reset concluído"

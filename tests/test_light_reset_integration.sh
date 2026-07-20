@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Integração do RESET_MODE=light — REQUER cluster de pé (rode 1 réplica full antes).
 # Prova o par reset/assert: suja o estado → assert FALHA; reset → assert PASSA.
-# Uso: bash tests/test_light_reset_integration.sh
+# Uso: sudo bash tests/test_light_reset_integration.sh
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="${HERE}/.."
@@ -9,8 +9,10 @@ CFG="${ROOT}/simulator/data/config_compressed.yaml"
 export KUBECONFIG="${HOME}/.kube/members.config"
 fail=0
 
+[ "$(id -u)" -eq 0 ] || { echo "❌ ABORT: rode como root — sudo bash tests/test_light_reset_integration.sh (o kubeconfig do cluster está em /root/.kube)"; exit 1; }
+
 # Guard 1: os 3 control-planes de pé? (senão nada a testar → SKIP limpo)
-names="$(sudo docker ps --format '{{.Names}}')"
+names="$(docker ps --format '{{.Names}}')"
 for c in member1-control-plane member2-control-plane karmada-host-control-plane; do
   echo "${names}" | grep -qx "${c}" \
     || { echo "SKIP: cluster incompleto (${c} não está de pé); rode 'make setup' primeiro"; exit 0; }

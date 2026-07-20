@@ -81,10 +81,12 @@ else
     && sudo docker ps --format '{{.Names}}' | grep -qx member2-control-plane \
     && sudo docker ps --format '{{.Names}}' | grep -qx karmada-host-control-plane \
     || die "nenhum cluster de pé; rode uma réplica full primeiro (RESET_MODE=full)"
-  KUBECONFIG="${HOME}/.kube/members.config" kubectl --context member1 get nodes >/dev/null 2>&1 \
-    || die "kubeconfig inválido/cluster inacessível; rode full primeiro"
-  bash "${ROOT_DIR}/scripts/light_reset.sh" "${WORK_CFG_ABS}" || die "light_reset falhou"
-  bash "${ROOT_DIR}/scripts/assert_clean_state.sh" "${WORK_CFG_ABS}" \
+  # kubeconfig do cluster vive em /root/.kube (setup roda como root; `sudo -E` é ignorado
+  # nesta máquina) → preflight e scripts do light rodam sob sudo.
+  sudo bash -c 'export KUBECONFIG="${HOME}/.kube/members.config"; kubectl --context member1 get nodes' >/dev/null 2>&1 \
+    || die "cluster inacessível como root (kubeconfig em /root/.kube); rode 'make setup' ou uma réplica full primeiro"
+  sudo bash "${ROOT_DIR}/scripts/light_reset.sh" "${WORK_CFG_ABS}" || die "light_reset falhou"
+  sudo bash "${ROOT_DIR}/scripts/assert_clean_state.sh" "${WORK_CFG_ABS}" \
     || die "state-assertion reprovou — possível vazamento (output preservado, nada rodado)"
   sudo -E SIM_CONFIG_SRC="${WORK_CFG_ABS}" make -C "${ROOT_DIR}" start || die "make start (light) falhou"
 fi
