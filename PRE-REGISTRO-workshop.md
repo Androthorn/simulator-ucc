@@ -232,3 +232,70 @@ A t inversa do gate é implementação própria (sem scipy), fixada por teste co
 tabela publicada em 13 pontos. É deliberado: se o gate importasse scipy, a decisão
 de promoção passaria a depender da versão de uma lib numérica e um upgrade poderia
 mudar uma promoção em silêncio.
+
+---
+
+## Adendo 1 — decomposição de S por componente (2026-07-20)
+
+> **Adendo, não edição.** Nada acima foi alterado. Escrito **depois** do smoke de 2
+> réplicas (`runs-workshop/p0_smoke_prefila/`, ambas normais: migr 24, 5 ciclos, zero
+> ciclos pulados) e **antes** de qualquer réplica dos três braços. Motivado por análise
+> do mecanismo do tratamento, não por resultado — não existe dado de `p1`.
+
+### O problema: os eixos do tratamento brigam dentro do S
+
+Decompondo uma réplica de p0 do smoke (S=0.7574):
+
+| componente | sub-score | peso | contribuição | teto p/ ganhar |
+|---|---|---|---|---|
+| `pending_pods` | 0.821 | 0.35 | 0.2873 | +0.0627 |
+| `time_with_pending` | 0.784 | 0.25 | 0.1960 | +0.0540 |
+| `cost` | 0.568 | 0.25 | 0.1420 | +0.1080 |
+| `number_of_migrations` | 0.880 | 0.15 | 0.1320 | +0.0180 |
+| **S** | | | **0.7574** | **+0.2426** |
+
+Os dois few-shots do p1 ensinam *"pending é prioridade absoluta → migra pro público"* e
+*"já está no público → não traz de volta"*. **Ambos empurram para mais colocação pública**,
+o que melhora disponibilidade e piora custo:
+
+- ganho possível em `pending` + `twp`: **até +0.110** (teto teórico dos dois somados)
+- perda possível em `cost`: **até −0.141**
+
+Para atingir o MDE de 0.073, o p1 precisaria capturar ~66% do teto de disponibilidade
+**com penalidade de custo próxima de zero**. É um caminho estreito.
+
+**A consequência:** se o teste do S agregado der ~zero, o desenho atual **não distingue**
+
+- **(a)** o prompt não mudou comportamento nenhum, de
+- **(b)** o prompt mudou comportamento e os pesos do score cancelaram os efeitos.
+
+São achados diferentes, e **(b) é o mais forte** — é uma afirmação sobre a métrica do
+próprio paper, não sobre o prompt. Neste desenho, é provável que o sinal de verdade
+more na decomposição, não no agregado.
+
+### O que fica registrado
+
+**Análise confirmatória secundária (diagnóstica):** reporta-se a **decomposição de S nos
+4 componentes** para `p0` e `p1` — sub-score médio por componente, com IC —, sob o mesmo
+critério de exclusão da §4b (`migr > 50` fora, stall reportado).
+
+**Predição direcional, registrada agora como hipótese:**
+`pending_pods` ↑ · `time_with_pending` ↑ · `cost` ↓ · `number_of_migrations` ≈ ou ↓.
+
+**Cláusula que mantém isto limpo:** **a promoção continua decidida SÓ pelo S agregado**,
+pelo gate da §4b, com os mesmos k=12 / δ_min=0.05 / α=0.05. A decomposição é
+**diagnóstica, nunca critério de promoção**.
+
+Isso é deliberado e resolve duas coisas de uma vez:
+1. **Multiplicidade:** 4 componentes **não** viram 4 testes de promoção. Há um teste de
+   promoção, o mesmo de antes.
+2. **Integridade do gate:** o critério pré-registrado não muda; nada aqui pode ser usado
+   depois para justificar uma promoção que o S agregado recusou.
+
+### O que este adendo NÃO faz
+
+**Não reabre o endurecimento do workload** (Gate 1, decidido em 18/07: rodar assim). A
+decomposição é justamente o que torna isso desnecessário — extrai-se resultado
+interpretável mesmo com agregado nulo, sem mexer no cenário que já foi medido.
+
+**Não muda k, δ_min, α, MDE, nem os critérios de exclusão.** Nada acima foi tocado.
