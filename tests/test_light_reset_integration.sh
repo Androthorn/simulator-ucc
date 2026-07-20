@@ -52,6 +52,20 @@ fi
 # 3) reset DEVE limpar
 bash "${ROOT}/scripts/light_reset.sh" "${CFG}" >/dev/null 2>&1 || { echo "FAIL: light_reset erro"; fail=1; }
 
+# 3b) os containers montaram o config DESTA réplica (não o config.yaml congelado)?
+# Regressão do bug em que SIM_CONFIG_SRC era descartado pelo env_reset do sudo.
+CFG_ABS="$(readlink -f "${CFG}")"
+cfg_ok=1
+for c in ai-engine monitor; do
+  got="$(docker inspect "${c}" --format '{{range .Mounts}}{{if eq .Destination "/app/simulator_config.yaml"}}{{.Source}}{{end}}{{end}}' 2>/dev/null)"
+  [ "${got}" = "${CFG_ABS}" ] \
+    || { echo "FAIL: ${c} montou '${got}', esperado '${CFG_ABS}' (SIM_CONFIG_SRC não chegou ao compose)"; cfg_ok=0; fail=1; }
+done
+got="$(docker inspect actuator --format '{{range .Mounts}}{{if eq .Destination "/simulator/data/config.yaml"}}{{.Source}}{{end}}{{end}}' 2>/dev/null)"
+[ "${got}" = "${CFG_ABS}" ] \
+  || { echo "FAIL: actuator montou '${got}', esperado '${CFG_ABS}' (SIM_CONFIG_SRC não chegou ao compose)"; cfg_ok=0; fail=1; }
+[ "${cfg_ok}" -eq 1 ] && echo "ok: containers montaram o config da réplica"
+
 # 4) assert DEVE passar após reset
 if bash "${ROOT}/scripts/assert_clean_state.sh" "${CFG}"; then
   echo "ok: assert passou após reset"
