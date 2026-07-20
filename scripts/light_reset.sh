@@ -13,23 +13,38 @@ CONFIG_PATH="${1:?config_path}"
 
 MEMBERS_KUBECONFIG="${MEMBERS_KUBECONFIG:-$HOME/.kube/members.config}"
 PROM_ENDPOINTS=("${PROM_MEMBER1:-http://localhost:9090}" "${PROM_MEMBER2:-http://localhost:9091}")
-MONGO_DB="ai_engine"; MONGO_COLL="recommendation_history"
 
 log() { echo "[reset $(date -u +%H:%M:%S)] $*"; }
 
+# Mongo db/collection: lidos do config, nunca hardcoded (a app lê de lá — ver
+# ai-engine/engine/recommendation_history_db.py). Se o config mudar os nomes, o
+# reset tem que dropar a coleção certa.
+MONGO_DB="$(yq '.["ai-engine"].recommendation_history.mongodb.database' "${CONFIG_PATH}")"
+MONGO_COLL="$(yq '.["ai-engine"].recommendation_history.mongodb.collection' "${CONFIG_PATH}")"
+[ -n "${MONGO_DB}" ] && [ "${MONGO_DB}" != "null" ] || { echo "❌ RESET: mongodb.database vazio/null no config" >&2; exit 1; }
+[ -n "${MONGO_COLL}" ] && [ "${MONGO_COLL}" != "null" ] || { echo "❌ RESET: mongodb.collection vazio/null no config" >&2; exit 1; }
+
 export KUBECONFIG="${MEMBERS_KUBECONFIG}"
 
-# 1) Workload: apaga todo deploy/job/pod de workload (namespace default) nos dois members
+# 1a) Karmada CP primeiro: é ONDE o workload é criado (broker usa karmada.config).
+#     Apagar aqui faz o Karmada despropagar dos members; o sweep abaixo pega restos.
+KARMADA_KUBECONFIG="${KARMADA_KUBECONFIG:-$HOME/.kube/karmada.config}"
+log "workload delete no control plane do Karmada (default)"
+KUBECONFIG="${KARMADA_KUBECONFIG}" kubectl --context karmada-apiserver -n default \
+  delete deployments,jobs --all --ignore-not-found --wait=true --timeout=180s
+
+# 1b) Workload: apaga todo deploy/job/pod de workload (namespace default) nos dois members
 for ctx in member1 member2; do
   log "workload delete em ${ctx}/default"
   kubectl --context "${ctx}" -n default delete deployments,jobs,pods --all \
     --ignore-not-found --wait=true --timeout=120s
 done
 
-# 2) Nós: apaga TODOS os nós KWOK (limpa os que o autoscaler somou) e re-aplica o baseline
+# 2) Nós: apaga TODOS os nós não-control-plane (limpa os que o autoscaler somou —
+#    esses só têm cloud=public + kwok.x-k8s.io/node=fake, NÃO type=kwok) e re-aplica o baseline
 for ctx in member1 member2; do
-  log "nós KWOK delete em ${ctx}"
-  kubectl --context "${ctx}" delete nodes -l type=kwok \
+  log "nós (não control-plane) delete em ${ctx}"
+  kubectl --context "${ctx}" delete nodes -l '!node-role.kubernetes.io/control-plane' \
     --ignore-not-found --wait=true --timeout=120s
 done
 log "re-aplicando baseline de nós (create_kwok_nodes.sh)"
