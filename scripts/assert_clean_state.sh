@@ -36,6 +36,8 @@ MONGO_DB="$(yq '.["ai-engine"].recommendation_history.mongodb.database' "${CONFI
 MONGO_COLL="$(yq '.["ai-engine"].recommendation_history.mongodb.collection' "${CONFIG_PATH}")"
 [ -n "${MONGO_DB}" ] && [ "${MONGO_DB}" != "null" ] || die "mongodb.database vazio/null no config"
 [ -n "${MONGO_COLL}" ] && [ "${MONGO_COLL}" != "null" ] || die "mongodb.collection vazio/null no config"
+MONITOR_DB="${MONITOR_DB:-monitor}"; MONITOR_COLL="${MONITOR_COLL:-metrics}"
+MONITOR_MAX_AGE_S="${MONITOR_MAX_AGE_S:-600}"
 
 export KUBECONFIG="${MEMBERS_KUBECONFIG}"
 
@@ -96,6 +98,16 @@ cnt="$(docker exec "${mid}" mongosh --quiet "${MONGO_DB}" --eval "db.${MONGO_COL
 cnt="$(printf '%s' "$cnt" | tr -d '[:space:]')"
 [ "${cnt}" = "0" ] || die "recommendation_history tem '${cnt}' doc(s) (esperado 0)"
 
+# 4b) monitor.metrics: não dá pra exigir 0 docs (o monitor repopula em ~5s após o reset).
+#     Exigimos que NADA seja antigo: se o drop falhou, o run anterior inteiro (~12 min) sobrevive.
+velhos="$(docker exec "${mid}" mongosh --quiet "${MONITOR_DB}" --eval "
+  var lim = new Date(Date.now() - ${MONITOR_MAX_AGE_S}*1000).toISOString().slice(0,19).replace('T',' ');
+  print(db.${MONITOR_COLL}.countDocuments({timestamp: {\$lt: lim}}));
+" 2>/dev/null | tr -d '[:space:]')" \
+  || die "mongosh countDocuments em ${MONITOR_DB}.${MONITOR_COLL} falhou"
+[ "${velhos}" = "0" ] \
+  || die "${MONITOR_DB}.${MONITOR_COLL} tem ${velhos} doc(s) mais velhos que ${MONITOR_MAX_AGE_S}s — histórico da réplica anterior sobreviveu ao reset"
+
 # 5) app containers todos running
 for c in "${APP_CONTAINERS[@]}"; do
   status="$(docker inspect -f '{{.State.Status}}' "${c}" 2>/dev/null || echo missing)"
@@ -115,4 +127,4 @@ src="$(docker inspect actuator --format '{{range .Mounts}}{{if eq .Destination "
   || die "docker inspect actuator falhou"
 [ "${src}" = "${CONFIG_ABS}" ] || die "actuator montou config '${src}', esperado '${CONFIG_ABS}'"
 
-echo "✅ state-assertion OK: nós ${n1}/${n2}, zero workload (members+karmada CP), Prometheus limpo, mongo 0, app up com config correto"
+echo "✅ state-assertion OK: nós ${n1}/${n2}, zero workload (members+karmada CP), Prometheus limpo, mongo 0, monitor.metrics sem doc >${MONITOR_MAX_AGE_S}s, app up com config correto"

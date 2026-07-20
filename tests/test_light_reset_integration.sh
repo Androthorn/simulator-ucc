@@ -56,6 +56,14 @@ fi
 
 # ---- Phase B: detecção, um eixo por vez ----
 
+# B0 — histórico velho em monitor.metrics (prova o check novo)
+mid_m="$(docker ps -q -f name=^mongo$)"
+docker exec "${mid_m}" mongosh --quiet monitor --eval \
+  'db.metrics.insertOne({timestamp:"2020-01-01 00:00:00", data:{interval_duration:"5s",workloads:[],cluster_info:[]}})' >/dev/null
+expect_dirty_detected "doc antigo em monitor.metrics"
+docker exec "${mid_m}" mongosh --quiet monitor --eval \
+  'db.metrics.deleteMany({timestamp:"2020-01-01 00:00:00"})' >/dev/null
+
 # B1 — nó SEM type: kwok (prova do C1; mimetiza os labels do próprio template do autoscaler)
 kubectl --context member2 apply -f - >/dev/null <<'EOF' || { echo "FAIL: não sujei (nó autoscaler-like)"; fail=1; }
 apiVersion: v1
@@ -137,6 +145,9 @@ status:
 EOF
 
 docker exec "${mid}" mongosh --quiet "${MONGO_DB}" --eval "db.${MONGO_COLL}.insertOne({probe:1})" >/dev/null
+
+docker exec "${mid_m}" mongosh --quiet monitor --eval \
+  'db.metrics.insertOne({timestamp:"2020-01-01 00:00:00", data:{interval_duration:"5s",workloads:[],cluster_info:[]}})' >/dev/null
 
 KUBECONFIG="${KARMADA_KUBECONFIG}" kubectl --context karmada-apiserver -n default apply -f - >/dev/null <<'EOF' || { echo "FAIL: não sujei (deployment no karmada CP, fase C)"; fail=1; }
 apiVersion: apps/v1
