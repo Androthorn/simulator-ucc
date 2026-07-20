@@ -299,3 +299,63 @@ decomposição é justamente o que torna isso desnecessário — extrai-se resul
 interpretável mesmo com agregado nulo, sem mexer no cenário que já foi medido.
 
 **Não muda k, δ_min, α, MDE, nem os critérios de exclusão.** Nada acima foi tocado.
+
+---
+
+## Adendo 2 — proveniência do runner e custo medido (2026-07-20)
+
+> **Adendo aditivo.** Não altera nenhuma decisão de desenho: k, δ_min, α, MDE, critérios
+> de exclusão e as três análises seguem exatamente como no corpo. Registra fatos que não
+> existiam quando o §7 foi escrito. Escrito **antes** de qualquer réplica dos três braços.
+
+### O runner entra na cadeia de proveniência
+
+O §7 congela gate, resampling, score, fix e prompts — mas não o **runner**, porque quando
+foi escrito ele vivia solto na raiz de `projetos/`, que não é repositório, e não tinha hash
+para citar. O runner é o que decide qual prompt vai em qual réplica, em que ordem e com
+qual modo de reset: sem ele, o pré-registro congela o desenho mas não o que executa o desenho.
+
+| componente | referência |
+|---|---|
+| runner dos 3 braços | `simulatormeu@22fb776` — `run_experiment.py` |
+| runners do gate 1 (baseline + smoke) | `simulatormeu@0ac6669` — `run_replicas.py`, `smoke_1_replica.py`, **sem alteração** |
+| escalonamento (ordem + reset) | `hefesto@f807045` — `hefesto/core/schedule.py` |
+
+Duas propriedades do escalonamento são fixadas por teste (`hefesto/tests/core/test_schedule.py`)
+porque errar qualquer uma corromperia o experimento **sem erro visível**:
+
+1. **Intercalação** `p0, p0', p1, p0, …` — deriva temporal do cluster atinge os três braços
+   igualmente em vez de virar diferença entre eles.
+2. **Reset balanceado** — o modo depende do índice *dentro* do braço, então cada braço recebe
+   1 `full` + 11 `light`. Com o dispatch global anterior, só o primeiro run do conjunto seria
+   `full` e um braço teria mistura diferente dos outros — confound enquanto a certificação
+   `light ≡ full` não existir (segue pendente).
+3. **Separação de diretório por braço** — `p0` e `p0'` são o mesmo prompt e portanto o mesmo
+   sha8 (`8840d32d`). Derivar o destino só do hash faria os dois braços escreverem no mesmo
+   lugar e destruiria o controle nulo em silêncio.
+
+### Smoke pré-fila: passou
+
+`runs-workshop/p0_smoke_prefila/`, 2 réplicas (1 `full`, 1 `light`), verificando o §6:
+
+| | migr | ciclos | `CICLO PULADO` | inválidas | S |
+|---|---|---|---|---|---|
+| réplica 1 (`full`) | 24 | 5 | 0 | 0 | 0.7574 |
+| réplica 2 (`light`) | 24 | 5 | 0 | 0 | 0.7550 |
+
+Ambas normais pelo critério pré-registrado. **Tripwire limpo** — nenhum stall. Config viva
+em scheduler 90s / lookback 180s. n=2 **não** re-estima σ e nenhuma conclusão é tirada disso.
+
+### Custo medido, substituindo a estimativa
+
+O saldo caiu de **$16,17 para $15,75** com 2 simulações ⇒ **$0,21/simulação**, abaixo dos
+$0,26 de `analysis/CUSTO-experimento.md` (que vinha do cenário de 30 min). Projeção
+atualizada para os 3 braços:
+
+| | estimado ($0,26) | medido ($0,21) |
+|---|---|---|
+| 36 simulações | $9,36 | **~$7,6** |
+| folga sobre $15,75 | $6,4 | **~$8,2** (~39 réplicas) |
+
+O orçamento deixa de ser apertado. **Isso não muda k nem nada do desenho** — k=12 foi fixado
+por poder estatístico, não por orçamento, e não será revisado.
