@@ -478,3 +478,40 @@ intercalada, e a comparação entre eles é justa. O que não transporta é o ca
 
 Nada foi re-rodado depois de ver o resultado, e nenhum critério foi ajustado
 retroativamente — a fila foi executada uma vez, inteira, e é reportada inteira.
+
+---
+
+## Adendo 4 — proveniência dos prompts no repositório público (2026-07-21)
+
+> **Aditivo, sem efeito sobre dados ou análise.** Não altera nada do corpo nem dos Adendos
+> 1–3. Escrito depois do Adendo 3 e depois do push; fecha um furo de auditoria externa.
+
+O §7 e o Adendo 2 citam `ai-engine@a657919` como proveniência dos prompts. Esse commit
+existe **apenas na máquina do autor**: o submódulo `ai-engine` aponta para
+`cloud-ai-ufcg/ai-engine` (repositório de organização), está em HEAD destacado, e seus
+commits não foram — nem serão — empurrados. O ponteiro do submódulo registrado no
+`simulatormeu` também nunca avançou até eles (permanece em `7aa416e`).
+
+Consequência: após o push de `hefesto` e `simulatormeu`, todos os hashes citados por este
+pré-registro passaram a ser alcançáveis publicamente **exceto** o dos prompts — ou seja,
+a cadeia ficava furada exatamente no artefato que constitui a identidade do experimento.
+Proveniência que só o autor consegue verificar é o que este trabalho critica.
+
+**Correção:** cópias byte-idênticas em `simulatormeu/prompts-experimento/`
+(`simulatormeu@bb1ddf9`), com `prompts-experimento/*.txt -text` no `.gitattributes` para
+que o git nunca converta EOL. Verificado contra o submódulo **e** contra o blob no index:
+
+| arquivo | sha256[:16] | papel |
+|---|---|---|
+| `cand_8840d32d.txt` | `8840d32d362ee1ef` | **o `p0` que de fato rodou** (LF) |
+| `consolidator_agent_p0.txt` | `dd68a9989439e79f` | `p0` em disco (CRLF, **nunca rodou**) |
+| `consolidator_agent_p1.txt` | `35c8905da31e74c3` | tratamento |
+| `consolidator_agent_p4.txt` | `e46c69aa5b343752` | campeão antigo (origem dos few-shots) |
+
+Nada foi movido nem alterado: a infraestrutura continua lendo `ai-engine/prompts/`, e o
+guardrail do §5 (não tocar nos congelados) permanece respeitado — copiar não é tocar.
+
+**O que isto não conserta:** o histórico de commits dos prompts (mensagens, datas, o diff
+que os introduziu) segue apenas no submódulo local. O que passa a ser verificável por
+terceiros é o **conteúdo**, por hash — que é o que a análise depende. Registrado como
+limitação, não como equivalência.
