@@ -359,3 +359,122 @@ atualizada para os 3 braços:
 
 O orçamento deixa de ser apertado. **Isso não muda k nem nada do desenho** — k=12 foi fixado
 por poder estatístico, não por orçamento, e não será revisado.
+
+---
+
+## Adendo 3 — resultados e desvios (2026-07-21)
+
+> **Escrito depois do dado.** É o primeiro adendo que vê resultado, e por isso não decide
+> nada: todos os critérios estavam fixados em `5dcf2a7` / `beae8cb` / `f300d38`. Este
+> registra o que se obteve e, com o mesmo peso, **o que não se sustentou**.
+>
+> Fila: 36/36 réplicas, zero falhas, tripwire limpo (nenhum `migr == 0`).
+> `runs-workshop/experimento/`, 20/07 18:15 → 21/07 02:12.
+
+### R1. Análise primária (§4a) — obtida, como registrada
+
+24 réplicas nulas reais (`p0` + `p0'`), mistura inteira, sem exclusão, k=12:
+
+| regra | taxa de falsa promoção | IC95 bootstrap | predito no §4a |
+|---|---|---|---|
+| `naive` (ADRS) | **50.7 %** | [45.0, 55.7] | ~50 % |
+| `legacy` (ε·σ) | **0.4 %** | [0.0, 1.0] | ~0.4 % |
+| `gate` (opção B) | **0.1 %** | [0.0, 0.3] | ~0 % |
+
+*n reportável: 24 runs.* As três caem dentro do previsto. A predição veio de gaussiano
+sintético com σ=0.0216; o dado real é mistura suja com σ bem maior e as taxas bateram
+assim mesmo — que é a propriedade que se esperava de um método não-paramétrico, agora
+verificada em vez de assumida.
+
+### R2. Tratamento (§4b) — nulo nas duas versões
+
+| | `p0'` vs `p0` (controle nulo) | `p1` vs `p0` (tratamento) |
+|---|---|---|
+| **com exclusão** (`migr > 50`) | +0.0139 (LB −0.0133) | +0.0164 (LB −0.0063) |
+| **sem exclusão** (mistura inteira) | −0.0136 (LB −0.0610) | −0.0056 (LB −0.0500) |
+
+Gate recusa os quatro. **O efeito do tratamento é indistinguível do que o controle nulo
+produz do nada** — sem o braço `p0'` isto seria "+0.016, não significativo" com dúvida
+permanente de poder; com ele, a resposta é positiva, não ausente.
+
+Pós-exclusão: `p0` n=9 (0.6863 ± 0.0346) · `p0'` n=7 (0.7003 ± 0.0272) · `p1` n=7 (0.7027 ± 0.0136).
+Sem exclusão: n=12 cada, 0.6576 / 0.6440 / 0.6519.
+
+### R3. Decomposição (Adendo 1) — a predição direcional falhou, e o controle nulo explica
+
+| componente | `p1` − `p0` | **`p0'` − `p0`** | predição do Adendo 1 |
+|---|---|---|---|
+| `pending_pods` | +0.0020 | **+0.0020** | ↑ |
+| `time_with_pending` | +0.0408 | **+0.0407** | ↑ |
+| `cost` | +0.0069 | −0.0021 | **↓ — falhou** |
+| `number_of_migrations` | +0.0252 *(IC exclui 0)* | **+0.0237** | ~ |
+
+Cada efeito do `p1` é replicado pelo controle nulo, **inclusive o único cujo IC exclui
+zero**. Não é efeito de tratamento: é artefato de exclusão desigual — `p0` perdeu 3 runs,
+`p0'` e `p1` perderam 5 cada, então os dois últimos sobram mais selecionados e parecem
+melhores em tudo.
+
+Sem o Adendo 1 e sem o braço `p0'`, `number_of_migrations` teria sido reportado como
+efeito real do tratamento. **É o achado metodológico mais direto do experimento.**
+
+### D1. Desvio — a premissa do critério de exclusão não se sustentou
+
+O §3 justificou excluir `migr > 50` porque o modo era distinto, com vão largo, e sua taxa
+era invariante ao prompt. Neste dado:
+
+| | baseline (onde o critério foi calibrado) | este experimento |
+|---|---|---|
+| taxa de thrash | ~10 % | **36 %** (13/36) |
+| vão bimodal | 33 → 103 (**70**) | 42 → 53 (**11**) |
+| correlação S × `migr` | — | **r = −0.887** |
+| excluídos por braço | — | **3 / 5 / 5** |
+
+Com r=−0.887, excluir por migração aproxima-se de excluir por S (removidos: S médio 0.573;
+mantidos: 0.696). Isso é **condicionar no desfecho** — precisamente o que o §3 argumentava
+não estar fazendo, e o argumento dependia de uma bimodalidade que este dado não tem.
+
+**Consequência declarada:** a §4a **sobrevive** — não usa exclusão e é não-paramétrica. A
+§4b **não sobrevive como análise única**, e por isso vai reportada **nas duas versões**,
+como o corpo já exigia. Nenhuma das duas versões muda a conclusão (nulo), o que limita o
+dano; mas a limitação é da análise, não do resultado, e vai declarada assim.
+
+### D2. Desvio — a calibração não transporta entre regimes
+
+**σ=0.0216 e o corte em 50 foram derivados do baseline, e o baseline é outro regime.** O
+MDE de 0.073 registrado no §4b herda essa calibração e deve ser lido como referente ao
+regime em que foi medido, não a este. Nenhum número deste adendo foi usado para recalibrar
+coisa alguma — k, δ_min e α ficaram como estavam, e não serão revisados retroativamente.
+
+### O1. Observação — deslocamento de regime entre lotes
+
+O mesmo `p0`, mesma config, mesmo modelo:
+
+| | n | `migr` |
+|---|---|---|
+| `p0` histórico saudável (`p0_batch` 6 + `p0_clean` 3 + smoke 2) | 11 | **22 – 33** |
+| `p0` nesta fila | 12 | **24 – 92** (média 46.5) |
+
+Onze runs históricos nunca passaram de 33; aqui 3 de 12 passam de 50.
+
+Duas explicações **descartadas** pelo próprio desenho:
+- **não é deriva temporal** — por terço cronológico, `migr` médio 44.8 / 50.2 / 43.0, sem
+  tendência (a intercalação existia para tornar isto verificável);
+- **não é o prompt** — os três braços deslocaram igualmente (46.5 / 46.8 / 44.8).
+
+**Hipótese em aberto, não fechada:** esta fila foi **92 % `light`** (33 de 36) enquanto o
+baseline foi majoritariamente `full`. Os dois runs `full` sadios daqui deram `migr` 23.6 e
+28.5, de volta à faixa histórica — mas são **n=3**, e sequências curtas de `light` deram
+24–32 historicamente. **Isso não é evidência suficiente para acusar o `light`**, e este
+adendo não o acusa. Registra-se o deslocamento como **observado** e a causa como
+**desconhecida**.
+
+⇒ **Próximo trabalho: a certificação `light ≡ full`**, pendente desde o §4d e agora com
+motivo concreto e desenho óbvio (braços pareados de mesmo prompt, um por modo de reset).
+
+### Leitura final
+
+A **validade interna se mantém**: os três braços viveram o mesmo ambiente, na mesma ordem
+intercalada, e a comparação entre eles é justa. O que não transporta é o calibre.
+
+Nada foi re-rodado depois de ver o resultado, e nenhum critério foi ajustado
+retroativamente — a fila foi executada uma vez, inteira, e é reportada inteira.
