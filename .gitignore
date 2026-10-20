@@ -54,3 +54,7 @@ input_benchmarks
 scripts/admin-user
 scripts/admin-password
 scripts/kwok.kubeconfig
+# the upstream rule output* above also matches paper/data; keep the slim copy
+!/paper/data/old_runs/output
+!/paper/data/old_runs/outputSummary
+!/paper/data/old_runs/outputSummary/output
