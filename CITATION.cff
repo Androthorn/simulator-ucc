@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software or data, please cite the paper below."
+title: "simulator-ucc: code and data for 'When a Better Prompt Is Just Noise in LLM-Driven Cloud Orchestration'"
+authors:
+  - family-names: Cunha
+    given-names: Andre
+  - family-names: Farias
+    given-names: Giovanni
+  - family-names: Morais
+    given-names: Fabio
+license: Apache-2.0
+repository-code: "https://github.com/Androthorn/simulator-ucc"
+preferred-citation:
+  type: conference-paper
+  title: "When a Better Prompt Is Just Noise in LLM-Driven Cloud Orchestration"
+  authors:
+    - family-names: Cunha
+      given-names: Andre
+    - family-names: Farias
+      given-names: Giovanni
+    - family-names: Morais
+      given-names: Fabio
+  conference:
+    name: "IEEE/ACM International Conference on Utility and Cloud Computing (UCC 2026)"
+    city: "Florianópolis"
+    country: BR
+  year: 2026
