@@ -1,0 +1,28 @@
+simulator-ucc
+Copyright 2026 Andre Cunha, Giovanni Farias and Fabio Morais
+
+This repository is a modified fork of the WASP simulator
+(https://github.com/cloud-ai-ufcg/simulator), Copyright 2026 Laboratório de
+Sistemas Distribuídos (LSD), Universidade Federal de Campina Grande (UFCG)
+and Hewlett Packard Enterprise Development LP, licensed under the Apache
+License, Version 2.0 (see LICENSE).
+
+The fork diverges from upstream commit 18fd5aa (2025-12-16, branch
+feat/automacao-experimentos). Changes made in this fork, all after that
+commit and visible in the git history:
+
+- experiment runners for the UCC 2026 paper: run_ucc_experiment.sh
+  (confirmatory blocks), run_experiment.py, run_one_replica.sh,
+  run_replicas.py and smoke_1_replica.py (live experiment);
+- a compressed ~10-minute scenario (simulator/data/config_compressed.yaml,
+  simulator/data/input_compressed.json) and a per-replica config path
+  (SIM_CONFIG_SRC) in compose.yaml and scripts/main.sh;
+- a light reset mode between replicas (scripts/light_reset.sh,
+  scripts/assert_clean_state.sh);
+- the pre-registration of the live experiment (PRE-REGISTRO-workshop.md),
+  byte-exact copies of the experiment prompts (prompts-experimento/), and
+  the analysis code and data behind the paper (paper/).
+
+The ai-engine submodule points to a fork of
+https://github.com/cloud-ai-ufcg/ai-engine (Apache License 2.0) that adds
+three commits used by the live experiment; see README.md.
