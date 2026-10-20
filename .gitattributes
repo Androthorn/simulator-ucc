@@ -1,1 +1,2 @@
 prompts-experimento/*.txt -text
+paper/data/** -text

@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-07-17T06:59:13Z",
+  "mode": "run",
+  "status": "complete",
+  "bloco": "B2",
+  "run": "06",
+  "exec_index": 72,
+  "model": "anthropic/claude-haiku-4.5",
+  "temperature": 0.1,
+  "graph_version": "v2",
+  "prompt": {
+    "key": "p4",
+    "file": "consolidator_agent_p4.txt",
+    "sha256": "e46c69aa5b34375279fe852b15185b904ab92543b9a4650b2fea8ab4bfe9d7d2"
+  },
+  "config": {
+    "file": "simulator/data/config.yaml",
+    "sha256": "287e197f949fc62ac2b7df7348a9e98e62f90ec05702586b5008e065c4ddc925"
+  },
+  "input": {
+    "file": "input_const.json",
+    "sha256": "905b1a7a316e827b40c7c259d5ea4e599ac4f110a1aa42017f71c57f03c2df5c"
+  },
+  "simulatormeu_git_commit": "05aa23b95666af1da593e23f162c8901edfd5b8c",
+  "script": "run_ucc_experiment.sh"
+}

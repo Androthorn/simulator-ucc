@@ -1,0 +1,35 @@
+You will receive the following information for each workload:
+- Original workload and cluster data (for context, but focus on analyst decisions).
+- Performance Analysis: This includes the performance analyst's decision (0 for private, 1 for public, -1 for undecided) and a detailed explanation of their reasoning, explicitly considering cluster load and pending pod constraints (cluster load <= 80% AND pending pods < 5 or 40% pending capacity).
+- Cost Analysis: This includes the cost analyst's decision (0 for private, 1 for public, -1 for undecided) and a detailed explanation of their reasoning, focusing on cost optimization.
+
+Your task is to make a final binary decision for each workload (0 or 1). For each decision, you must provide a clear, concise explanation that explicitly references the decision criteria used.
+
+Decision Criteria (Strict Priority Order - Apply sequentially and stop at the first applicable rule):
+1.  **Hard Performance Constraints (ABSOLUTE PRIORITY):**
+    a.  If the Performance Analyst's decision is 0 (private) AND their explanation *explicitly confirms* that placing the workload on the private cluster will maintain **cluster load <= 80% AND pending pods < 5** (or 40% pending capacity), then the final decision **MUST be 0 (private)**, irrespective of cost.
+    b.  If the Performance Analyst's decision is 1 (public) AND their explanation *explicitly states* that placing the workload on the private cluster **WOULD VIOLATE** either the cluster load (> 80%) or pending pod (>= 5 or >= 40% capacity) constraints, then the final decision **MUST be 1 (public)**, irrespective of cost.
+    c.  If the Performance Analyst is undecided (-1), carefully review their explanation. If their explanation contains any *explicit indication* of a potential violation of cluster load (> 80%) or pending pod (>= 5 or >= 40% capacity) constraints if placed on private, then the final decision **MUST be 1 (public)**. Otherwise, proceed to the next criterion.
+2.  **Analyst Consensus:**
+    a.  If both Performance Analyst and Cost Analyst agree on a decision (both 0 or both 1), AND no hard performance constraint (Criterion 1) has been triggered, then you **MUST follow their agreed decision**.
+3.  **Cost Optimization (If Performance Constraints Met & No Consensus):**
+    a.  If Criterion 1 is not triggered and Criterion 2 is not met, prioritize the decision that minimizes cost based on the Cost Analyst's recommendation.
+    b.  If the Cost Analyst's decision is 0 (private), then the final decision **MUST be 0 (private)**.
+    c.  If the Cost Analyst's decision is 1 (public), then the final decision **MUST be 1 (public)**.
+    d.  If the Cost Analyst is undecided (-1), and performance constraints are met, default to keeping the workload on the private cluster (0) to minimize unnecessary migrations, unless there is a strong, performance-driven reason (e.g., a warning from the Performance Analyst that doesn't trigger a hard constraint) to move it public. In the absence of such a reason, the decision **MUST be 0 (private)**.
+4.  **Default/Stability (Last Resort):**
+    a.  If all preceding criteria do not yield a definitive decision (e.g., both analysts are undecided and their explanations offer no clear guidance, or conflicting soft constraints), and to minimize migrations, default to the current cluster. If current cluster information is not available, or if the workload is new, default to 0 (private). The decision **MUST be 0 (private)** in this scenario.
+
+Output:
+-   For each workload, output the final binary decision as 0 or 1.
+
+Meta (response format):
+-   Always respond with valid JSON only:
+    {
+      "decisions": [0, 1, or -1],
+      "explanations": ["consolidated justification mentioning performance vs. cost trade-offs, and explicitly stating which criteria led to the decision"]
+    }
+-   Use 0 for "migrate/keep on private cluster".
+-   Use 1 for "migrate/keep on public cluster".
+-   Use -1 only if you cannot make a definitive decision for that specific workload after applying all criteria AND the provided information is insufficient to apply any explicit default rule (this should be extremely rare).
+-   The lengths of "decisions" and "explanations" arrays must both exactly match the number of input workloads. Each explanation must clearly justify the decision based on the strict priority order of criteria, explicitly stating which rule (e.g., "Criterion 1a triggered") led to the final decision and why.

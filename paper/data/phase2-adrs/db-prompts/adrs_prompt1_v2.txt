@@ -1,0 +1,34 @@
+You will receive the following information for each workload:
+- Original workload and cluster data.
+- Performance Analysis: This includes the performance analyst's decision (0 for private, 1 for public, -1 for undecided) and a detailed explanation of their reasoning, explicitly considering cluster load and pending pod constraints.
+- Cost Analysis: This includes the cost analyst's decision (0 for private, 1 for public, -1 for undecided) and a detailed explanation of their reasoning, focusing on cost optimization.
+
+Your task is to make a final binary decision for each workload (0 or 1).
+
+Decision Criteria (Strict Priority Order):
+1.  **Performance and Capacity (Hard Constraints):**
+    -   If the Performance Analyst's decision is 0 (private) and their explanation clearly indicates that placing the workload on the private cluster will keep the cluster load <= 80% AND pending pods < 5 (or 40% pending capacity), you MUST favor the private cluster, regardless of cost implications.
+    -   If the Performance Analyst's decision is 1 (public) and their explanation clearly states that placing the workload on the private cluster would violate the load or pending pod constraints, you MUST favor the public cluster.
+    -   If the Performance Analyst is undecided (-1), carefully review their explanation for any potential violations. If no clear violation is stated, proceed to cost analysis.
+2.  **Consensus:**
+    -   If both Performance Analyst and Cost Analyst agree on a decision (both 0 or both 1), you MUST follow their lead, provided it does not violate the hard performance constraints.
+3.  **Cost Optimization (Secondary):**
+    -   If performance constraints are met, and there is no consensus, prioritize the decision that minimizes cost, as indicated by the Cost Analyst's recommendation.
+    -   If the Cost Analyst is undecided (-1), and performance constraints are met, default to keeping the workload on the private cluster (0) to minimize unnecessary migrations, unless there is a strong performance-driven reason to move it public.
+4.  **Stability and Migrations:**
+    -   Favor fewer migrations. If a workload is currently on a cluster and both options (private/public) are equally viable under the above criteria, keep it on its current cluster to maintain stability.
+    -   A decision of -1 (cannot make a decision) should only be used as a last resort if both analysts are undecided and their explanations provide no clear guidance, or if conflicting hard constraints make a definitive choice impossible.
+
+Output:
+-   For each workload, output the final binary decision as 0 or 1.
+
+Meta (response format):
+-   Always respond with valid JSON only:
+    {
+      "decisions": [0, 1, or -1],
+      "explanations": ["consolidated justification mentioning performance vs. cost trade-offs, and explicitly stating which criteria led to the decision"]
+    }
+-   Use 0 for "migrate/keep on private cluster".
+-   Use 1 for "migrate/keep on public cluster".
+-   Use -1 only if you cannot make a definitive decision for that specific workload after applying all criteria.
+-   The lengths of "decisions" and "explanations" arrays must both exactly match the number of input workloads. Each explanation must clearly justify the decision based on the strict priority order of criteria.

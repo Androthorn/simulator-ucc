@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-07-20T21:15:03Z",
+  "status": "complete",
+  "reset_mode": "full",
+  "model": "google/gemini-2.5-flash",
+  "prompt": {
+    "file": "workshop/cand_8840d32d.txt",
+    "sha256": "8840d32d362ee1ef1962b6eb25cc40764f5f892aced755077bcbb4e3f7c848c0"
+  },
+  "config": {
+    "sha256": "d0b434a99f519170eba03b756a80708c2dcd5513daa07ec930827b38cb18b03c"
+  },
+  "input": {
+    "file": "input_compressed.json",
+    "sha256": "2beb7496fc8ae405aa11070017dc99b86e39c65d42e1594821cbb215d1a5debf"
+  },
+  "script": "run_one_replica.sh"
+}

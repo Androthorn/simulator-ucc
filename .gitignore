@@ -46,3 +46,11 @@ scripts/admin-password
 
 output*
 input_benchmarks
+# raw runs (Zenodo archive) extracted at the repo root; paper/data holds the slim copy
+/runs/
+/runs-workshop/
+/old_runs/
+# generated locally by scripts/install_prometheus.sh and kind; never commit
+scripts/admin-user
+scripts/admin-password
+scripts/kwok.kubeconfig
