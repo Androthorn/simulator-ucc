@@ -14,9 +14,9 @@ Two modes:
                                       recount from the raw runs (Zenodo archive)
                                       and rewrite churn_by_run.csv
 
-Raw layout expected (as in the archive): DIR/old_runs = the
-google-gemini-2.5-flash_input_const_v2_0.1_runN directories; DIR/runs = the
-A1, A2, B1, B2 block directories.
+Raw layout expected (as in the Zenodo archive, extracted at the repo root):
+old_runs/output/ holds the google-gemini-2.5-flash_input_const_v2_0.1_runN
+directories; runs/ holds the A1, A2, B1, B2 block directories.
 """
 import argparse
 import csv
@@ -70,7 +70,7 @@ def summary(rows: list[dict]) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--from-csv", action="store_true")
-    ap.add_argument("--old-runs", type=Path, default=REPO / "old_runs")
+    ap.add_argument("--old-runs", type=Path, default=REPO / "old_runs" / "output")
     ap.add_argument("--runs", type=Path, default=REPO / "runs")
     a = ap.parse_args()
     if a.from_csv:
