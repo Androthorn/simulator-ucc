@@ -4,8 +4,8 @@
 	branch = main
 [submodule "ai-engine"]
 	path = ai-engine
-	url = https://github.com/cloud-ai-ufcg/ai-engine
-	branch = main
+	url = https://github.com/Androthorn/ai-engine-ucc.git
+	branch = ucc2026
 [submodule "monitor"]
 	path = monitor
 	url = https://github.com/cloud-ai-ufcg/monitor
