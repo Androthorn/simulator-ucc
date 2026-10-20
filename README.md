@@ -39,7 +39,11 @@ diff <(.venv/bin/python paper/analysis/recon_camera_ready.py) paper/analysis/rec
 
 All paths are relative to the scripts. The stability score S comes from one function only, `paper/analysis/ucc_scoring.py`. Hefesto carries an audited copy, checked by a cross-test. The scripts were checked against the camera-ready with numpy 2.3.5, pandas 2.3.3, scipy 1.16.3 and matplotlib 3.10.7. `paper/data/README.md` describes every data file, including the known naming errors in the Phase 2 prompt files.
 
-Two scripts need the raw runs, which are not in git: `cycle_latency.py`, and `churn_marker.py` without `--from-csv`. The raw runs are in the Zenodo archive, DOI `TODO`. Extract it at the repository root; `runs/`, `runs-workshop/` and `old_runs/` are gitignored there.
+Two scripts need the raw runs, which are not in git: `cycle_latency.py`, and `churn_marker.py` without `--from-csv`. The raw runs are on Zenodo, [doi:10.5281/zenodo.23500307](https://doi.org/10.5281/zenodo.23500307): `runs.tar.gz`, `runs-workshop.tar.gz`, `old_runs-output.tar.gz` and `old_runs-outputSummary-part1of5` to `part5of5.tar.gz`, with `SHA256SUMS`. Extract them at the repository root, where `runs/`, `runs-workshop/` and `old_runs/` are gitignored. The six `old_runs-*` parts extract into the same `old_runs/`.
+
+```sh
+sha256sum -c SHA256SUMS && for f in *.tar.gz; do tar -xzf "$f"; done
+```
 
 ## 3. Running the simulations
 

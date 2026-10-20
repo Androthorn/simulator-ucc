@@ -9,6 +9,10 @@ authors:
   - family-names: Morais
     given-names: Fabio
 license: Apache-2.0
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23500307
+    description: "Raw simulation runs (Zenodo)"
 repository-code: "https://github.com/Androthorn/simulator-ucc"
 preferred-citation:
   type: conference-paper
