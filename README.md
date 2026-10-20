@@ -20,10 +20,10 @@ The `ai-engine` submodule points to [Androthorn/ai-engine-ucc](https://github.co
 
 ```sh
 python3 -m venv .venv && .venv/bin/pip install -r paper/requirements.txt
-cd paper/analysis
-../../.venv/bin/python table1_phase1.py        # Table I
-../../.venv/bin/python ucc_stats.py            # Table III, Section V-C, transfer screen
-../../.venv/bin/python recon_camera_ready.py   # Tables IV-V numbers, Section V-G, two windows (about 3 min)
+.venv/bin/python paper/analysis/table1_phase1.py        # Table I
+.venv/bin/python paper/analysis/ucc_stats.py            # Table III, Section V-C, transfer screen
+.venv/bin/python paper/analysis/recon_camera_ready.py   # Table V, Section V-G, two windows (about 3 min)
+diff <(.venv/bin/python paper/analysis/recon_camera_ready.py) paper/analysis/recon_camera_ready.out   # empty = reproduced
 ```
 
 | in the paper | script | reads |

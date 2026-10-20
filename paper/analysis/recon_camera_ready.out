@@ -1,0 +1,48 @@
+== W5 piloto (CFIXED)
+ v1 0.6955±0.0755  v5(38-47) 0.7391±0.0353  ganho +6.3%  sd -53.3%
+== W5c tabela V com o gate (vs v1, v5 com 14 runs)
+ v2 n=10 diff=-0.0425 LB=-0.1037
+ v3 n=10 diff=-0.0137 LB=-0.0777
+ v4 n=10 diff=-0.0310 LB=-0.0953
+ v5 n=14 diff=-0.0008 LB=-0.0643
+ v6 n=10 diff=+0.0222 LB=-0.0264
+ v5 38-47 diff=+0.0436 LB=-0.0031
+== W2 poder para +0.044, n=30, Welch bilateral
+ SDs piloto 0.825  SDs observados 0.355  n p/80% 92
+== W3 LB de cada comparacao
+ A2 vs A1        diff=+0.0202 LB=-0.0253
+ p1 vs p0 mix    diff=-0.0056 LB=-0.0500
+ p1 vs p0 excl   diff=+0.0164 LB=-0.0063
+ p0' vs p0 mix   diff=-0.0136 LB=-0.0610
+ p0' vs p0 excl  diff=+0.0139 LB=-0.0133
+ A1 vs B1        diff=+0.1900 LB=+0.0981
+== Q5/W3 taxa EXATA sob a nula, 24 replicas ao vivo, k=12, todas as 2.704.156 divisoes ordenadas
+ naive 49.9999%  (legacy eps-sigma pareia por zip, precisa de MC, fica fora)
+ gate delta_min=0: 4.95441%  (133975 de 2704156)
+ gate delta_min=0.02: 0.99125%  (26805 de 2704156)
+ gate delta_min=0.03: 0.38260%  (10346 de 2704156)
+ gate delta_min=0.05: 0.03373%  (912 de 2704156)
+== W3 shift injetado, ao vivo comprimido, k=12, B=40000, margens [0, 0.02, 0.05]
+ 0.020: 0.167  0.049  0.004
+ 0.044: 0.446  0.202  0.032
+ 0.050: 0.534  0.265  0.049
+ 0.073: 0.832  0.577  0.193
+ 0.100: 0.984  0.895  0.534
+ 0.120: 0.999  0.984  0.800
+== W3 shift injetado, A1 (30 min, mesmo cenario do p4), 15 vs 15, B=40000, margens [0, 0.02, 0.05]
+ 0.000: 0.049  0.015  0.001
+ 0.020: 0.122  0.049  0.007
+ 0.044: 0.277  0.142  0.035
+ 0.050: 0.328  0.176  0.049
+ 0.073: 0.550  0.355  0.136
+ 0.100: 0.791  0.619  0.328
+ 0.120: 0.912  0.791  0.521
+== Q5 ponto (MC 400k divisoes): naive 49.9667%  legacy 0.3910%  gate 0.0290%
+ naive  IC95 bootstrap sobre replicas [49.27%, 50.73%]
+ legacy IC95 bootstrap sobre replicas [0.19%, 0.48%]
+ gate   IC95 bootstrap sobre replicas [0.00%, 0.11%]
+== p4 historico so com os 10 runs do prompt de 3 exemplos (38-47)
+ v5 2 exemplos (34-37): n=4 0.5837±0.1479
+ v5(38-47) vs v1 historico: diff=+0.0436 Welch p=0.122 Levene p=0.0069 d=+0.74 sd ratio v1/v5=2.14 LB=-0.0031
+ v5(38-47) vs A2 fresco: diff=+0.0481 Welch p=0.034 Levene p=0.0066 d=+0.52
+ v1 historico vs A1 fresco: Welch p=0.432 d=+0.25

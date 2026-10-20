@@ -58,3 +58,4 @@ scripts/kwok.kubeconfig
 !/paper/data/old_runs/output
 !/paper/data/old_runs/outputSummary
 !/paper/data/old_runs/outputSummary/output
+!/paper/analysis/recon_camera_ready.out
