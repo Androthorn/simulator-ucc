@@ -1,5 +1,7 @@
 # Prompts do experimento — cópias para proveniência
 
+> **Note (2026-10-20):** the paragraph below is from July 2026. Since then the `ai-engine` submodule points to `Androthorn/ai-engine-ucc`, branch `ucc2026`, pinned at `a657919`, so the commits that versioned these prompts are public. These copies stay as they are, byte-exact; the hashes below still identify the experiment.
+
 **Não editar. Não usar em execução.** Os arquivos que a infra lê continuam sendo os do
 submódulo `ai-engine/prompts/`. Estes são **cópias byte-idênticas**, versionadas aqui
 porque o submódulo aponta para `cloud-ai-ufcg/ai-engine` (repo de organização) e os
