@@ -10,8 +10,8 @@ ferramenta do passo 1 do brief: ver se a variância não explode e se há headro
 - DRY por padrão: imprime plano + custo estimado e sai. Precisa de --go pra rodar.
 
 Rodar:
-  cd /home/andre/projetos && hefesto/.venv/bin/python run_replicas.py        # plano (dry)
-  cd /home/andre/projetos && hefesto/.venv/bin/python run_replicas.py --go    # roda de verdade
+  <python do venv com o hefesto> run_replicas.py        # plano (dry)
+  <python do venv com o hefesto> run_replicas.py --go    # roda de verdade
   ... --go -k 10                                                              # k réplicas
 """
 import argparse

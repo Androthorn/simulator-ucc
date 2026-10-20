@@ -8,14 +8,13 @@ summary_metrics.csv → StabilityGrader → S.
 NÃO é loop, não promove nada. Só valida a fiação com uma sim de verdade.
 Custa créditos (1 sim, gemini-2.5-flash) e usa sudo (make setup-and-start).
 
-Rodar:  cd /home/andre/projetos && hefesto/.venv/bin/python smoke_1_replica.py
+Rodar:  <python do venv com o hefesto instalado> smoke_1_replica.py
 """
 import os
 import sys
 from pathlib import Path
 
-ROOT = Path("/home/andre/projetos")
-SIM = ROOT / "simulatormeu"
+SIM = Path(__file__).resolve().parent   # raiz deste repositório
 CONFIG = SIM / "simulator" / "data" / "config_compressed.yaml"
 INPUT = SIM / "simulator" / "data" / "input_compressed.json"
 RUNS = SIM / "runs-workshop"
